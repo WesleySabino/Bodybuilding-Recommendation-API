@@ -88,6 +88,40 @@ pytest
 ruff check .
 ```
 
+### Run the same checks with Docker + uv (Python 3.12)
+
+If you prefer not to install Python/uv locally, use the official `uv` Docker image:
+
+1. Sync dependencies (including dev extras):
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv sync --extra dev
+```
+
+2. Run tests:
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv run --python 3.12 pytest
+```
+
+3. Run lint:
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv run --python 3.12 ruff check .
+```
+
 ## Alembic
 
 Alembic is configured for SQLAlchemy and PostgreSQL. The scaffold is ready for the next step: database models and initial migrations.
