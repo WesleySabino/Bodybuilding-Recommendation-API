@@ -47,26 +47,45 @@ Interactive API docs are available at:
 http://localhost:8000/docs
 ```
 
-## Docker Compose
+## Docker Compose (Step-by-step)
 
-Start the API and PostgreSQL:
+1. Build and start PostgreSQL + API:
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-Then check health:
+2. Confirm containers are running:
+
+```bash
+docker compose ps
+```
+
+3. Smoke test the API:
 
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
 
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+4. Stop containers when done:
+
+```bash
+docker compose down
+```
+
 ## Tests
 
-Run the test suite:
+Run tests/lint from your local Python environment:
 
 ```bash
 pytest
+ruff check .
 ```
 
 ## Alembic
