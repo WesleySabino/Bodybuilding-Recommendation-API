@@ -122,6 +122,55 @@ docker run --rm \
   uv run --python 3.12 ruff check .
 ```
 
+
+## Step-by-step: Test Ruff with Docker
+
+Use this flow when you want lint results without relying on your local Python install.
+
+1. From the repo root, pull (or let Docker pull) the uv image:
+
+```bash
+docker pull ghcr.io/astral-sh/uv:python3.12-bookworm
+```
+
+2. Install project dependencies (including dev tools like Ruff) inside the container:
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv sync --extra dev
+```
+
+3. Run Ruff checks:
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv run --python 3.12 ruff check .
+```
+
+4. (Optional) Auto-fix what Ruff can fix safely, then re-run checks:
+
+```bash
+docker run --rm \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  ghcr.io/astral-sh/uv:python3.12-bookworm \
+  uv run --python 3.12 ruff check . --fix
+```
+
+5. If the previous command changed files, verify clean lint output by running Step 3 again.
+
+A successful run ends with output similar to:
+
+```text
+All checks passed!
+```
+
 ## Alembic
 
 Alembic is configured for SQLAlchemy and PostgreSQL. The scaffold is ready for the next step: database models and initial migrations.
