@@ -1,5 +1,6 @@
 from sqlalchemy import CheckConstraint
 
+import app.models  # noqa: F401
 from app.db.base import Base
 
 EXPECTED_TABLES = {"users", "user_profiles", "measurements"}

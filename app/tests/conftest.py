@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_db
+from app.db.base import Base
 from app.main import app as main_app
+from app.models import measurement, recommendation, user  # noqa: F401
 
 
 @pytest.fixture
@@ -25,6 +27,8 @@ def db_session() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    Base.metadata.create_all(bind=engine)
+
     testing_session_local = sessionmaker(
         autocommit=False,
         autoflush=False,
@@ -36,6 +40,7 @@ def db_session() -> Generator[Session, None, None]:
         yield session
     finally:
         session.close()
+        Base.metadata.drop_all(bind=engine)
         engine.dispose()
 
 
