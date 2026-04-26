@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.core.security import create_access_token, hash_password, verify_password
-from app.models.user import User
+from app.core.security import create_access_token, hash_password
 from app.schemas.auth import LoginRequest, Token, UserCreate, UserRead
+from app.services.auth import authenticate_user
+from app.services.users import create_user, get_user_by_email
 
 router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
@@ -24,21 +24,18 @@ DbSession = Annotated[Session, Depends(get_db)]
     ),
 )
 def register_user(payload: UserCreate, db: DbSession) -> UserRead:
-    existing_user = db.scalar(select(User).where(User.email == payload.email))
+    existing_user = get_user_by_email(db, payload.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
 
-    user = User(
+    return create_user(
+        db=db,
         email=payload.email,
         hashed_password=hash_password(payload.password),
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
 
 
 @router.post(
@@ -48,8 +45,8 @@ def register_user(payload: UserCreate, db: DbSession) -> UserRead:
     description="Validates user credentials and returns a bearer JWT access token.",
 )
 def login(payload: LoginRequest, db: DbSession) -> Token:
-    user = db.scalar(select(User).where(User.email == payload.email))
-    if not user or not verify_password(payload.password, user.hashed_password):
+    user = authenticate_user(db, payload.email, payload.password)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",

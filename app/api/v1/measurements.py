@@ -1,14 +1,20 @@
-from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.models.measurement import Measurement
 from app.models.user import User
 from app.schemas.measurement import MeasurementCreate, MeasurementRead
+from app.services.measurements import (
+    create_measurement as create_measurement_record,
+)
+from app.services.measurements import (
+    get_latest_measurement as get_latest_measurement_record,
+)
+from app.services.measurements import (
+    list_measurements as list_measurement_records,
+)
 
 router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
@@ -26,18 +32,7 @@ def create_measurement(
     db: DbSession,
     current_user: CurrentUser,
 ) -> MeasurementRead:
-    measurement = Measurement(
-        user_id=current_user.id,
-        weight_kg=payload.weight_kg,
-        body_fat_percent=payload.body_fat_percent,
-        waist_cm=payload.waist_cm,
-        notes=payload.notes,
-        measured_at=payload.measured_at or datetime.now(timezone.utc),  # noqa: UP017
-    )
-    db.add(measurement)
-    db.commit()
-    db.refresh(measurement)
-    return measurement
+    return create_measurement_record(db, current_user.id, payload)
 
 
 @router.get(
@@ -51,14 +46,7 @@ def list_measurements(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10_000),
 ) -> list[MeasurementRead]:
-    statement = (
-        select(Measurement)
-        .where(Measurement.user_id == current_user.id)
-        .order_by(desc(Measurement.measured_at), desc(Measurement.id))
-        .limit(limit)
-        .offset(offset)
-    )
-    return list(db.scalars(statement))
+    return list_measurement_records(db, current_user.id, limit, offset)
 
 
 @router.get(
@@ -70,13 +58,7 @@ def get_latest_measurement(
     db: DbSession,
     current_user: CurrentUser,
 ) -> MeasurementRead:
-    statement = (
-        select(Measurement)
-        .where(Measurement.user_id == current_user.id)
-        .order_by(desc(Measurement.measured_at), desc(Measurement.id))
-        .limit(1)
-    )
-    measurement = db.scalar(statement)
+    measurement = get_latest_measurement_record(db, current_user.id)
     if measurement is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

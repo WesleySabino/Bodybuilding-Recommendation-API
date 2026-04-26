@@ -1,20 +1,19 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.models.measurement import Measurement
 from app.models.user import User as UserModel
-from app.models.user import UserProfile
 from app.schemas.recommendation import (
     RecommendationMeasurement,
     RecommendationRead,
     RecommendationRequest,
     RecommendationUserProfile,
 )
+from app.services.measurements import list_recent_measurements
 from app.services.recommendation_engine import generate_recommendation
+from app.services.users import get_user_profile
 
 RECENT_MEASUREMENTS_LIMIT = 8
 
@@ -32,22 +31,17 @@ def create_recommendation(
     db: DbSession,
     current_user: CurrentUser,
 ) -> RecommendationRead:
-    profile = db.scalar(
-        select(UserProfile).where(UserProfile.user_id == current_user.id).limit(1),
-    )
+    profile = get_user_profile(db, current_user.id)
     if profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User profile is required before requesting recommendations.",
         )
 
-    measurements = list(
-        db.scalars(
-            select(Measurement)
-            .where(Measurement.user_id == current_user.id)
-            .order_by(desc(Measurement.measured_at), desc(Measurement.id))
-            .limit(RECENT_MEASUREMENTS_LIMIT),
-        ),
+    measurements = list_recent_measurements(
+        db,
+        current_user.id,
+        RECENT_MEASUREMENTS_LIMIT,
     )
     if not measurements:
         raise HTTPException(
