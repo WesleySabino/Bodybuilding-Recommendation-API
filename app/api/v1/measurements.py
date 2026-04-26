@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
-from app.schemas.measurement import MeasurementCreate, MeasurementRead
+from app.schemas.measurement import (
+    MeasurementCreate,
+    MeasurementListRead,
+    MeasurementRead,
+)
 from app.services.measurements import (
     create_measurement as create_measurement_record,
 )
@@ -52,7 +56,7 @@ def create_measurement(
 
 @router.get(
     "",
-    response_model=list[MeasurementRead],
+    response_model=MeasurementListRead,
     summary="List current user's measurements",
     description=(
         "Returns a paginated slice of measurements for the authenticated user, "
@@ -73,10 +77,16 @@ def create_measurement(
 def list_measurements(
     db: DbSession,
     current_user: CurrentUser,
-    limit: int = Query(default=50, ge=1, le=100),
+    limit: int = Query(default=30, ge=1, le=100),
     offset: int = Query(default=0, ge=0, le=10_000),
-) -> list[MeasurementRead]:
-    return list_measurement_records(db, current_user.id, limit, offset)
+) -> MeasurementListRead:
+    items, total = list_measurement_records(db, current_user.id, limit, offset)
+    return MeasurementListRead(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get(

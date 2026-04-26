@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.config import settings
 from app.core.security import create_access_token, hash_password
 from app.schemas.auth import LoginRequest, Token, UserCreate, UserRead
 from app.services.auth import authenticate_user
@@ -76,4 +77,7 @@ def login(payload: LoginRequest, db: DbSession) -> Token:
         )
 
     access_token = create_access_token({"sub": str(user.id)})
-    return Token(access_token=access_token)
+    return Token(
+        access_token=access_token,
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
