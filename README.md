@@ -2,6 +2,25 @@
 
 Backend-only FastAPI MVP for bodybuilding phase recommendations.
 
+## API overview (MVP)
+
+Base path: `/api/v1`
+
+- `POST /auth/register` — create account.
+- `POST /auth/login` — obtain bearer token.
+- `GET /users/me` / `PATCH /users/me` — read/update current user profile.
+- `POST /measurements`, `GET /measurements`, `GET /measurements/latest` — track progress snapshots.
+- `POST /recommendations` — generate deterministic phase/macronutrient guidance.
+
+Interactive OpenAPI docs (after starting the server):
+- Swagger UI: `/docs`
+- ReDoc: `/redoc`
+
+Documentation:
+- API contract: [`docs/api-contract.md`](docs/api-contract.md)
+- Common errors: [`docs/errors.md`](docs/errors.md)
+- MVP status: [`docs/mvp.md`](docs/mvp.md)
+
 ## Requirements
 
 - Docker + Docker Compose

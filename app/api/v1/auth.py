@@ -22,6 +22,17 @@ DbSession = Annotated[Session, Depends(get_db)]
         "Creates a user account with a hashed password and returns the created user "
         "resource."
     ),
+    responses={
+        409: {"description": "Duplicate email (already registered)."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
+    },
 )
 def register_user(payload: UserCreate, db: DbSession) -> UserRead:
     existing_user = get_user_by_email(db, payload.email)
@@ -43,6 +54,17 @@ def register_user(payload: UserCreate, db: DbSession) -> UserRead:
     response_model=Token,
     summary="Log in and obtain an access token",
     description="Validates user credentials and returns a bearer JWT access token.",
+    responses={
+        401: {"description": "Authentication failure (invalid email or password)."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
+    },
 )
 def login(payload: LoginRequest, db: DbSession) -> Token:
     user = authenticate_user(db, payload.email, payload.password)
