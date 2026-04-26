@@ -1,188 +1,171 @@
 # Bodybuilding Recommendation API
 
-Backend-only FastAPI scaffold for the Bodybuilding Recommendation API MVP.
+Backend-only FastAPI MVP for bodybuilding phase recommendations.
 
 ## Requirements
 
-- Python 3.12+
-- Docker and Docker Compose
+- Docker + Docker Compose
+- (Optional) Python 3.12+ for non-Docker local development
 
-## Local Setup
+## Environment setup
 
-Create a virtual environment and install the app with development dependencies:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-Copy the example environment file if you want local overrides:
+1. Copy the example env file:
 
 ```bash
 cp .env.example .env
 ```
 
-Run the API locally:
+2. Update values as needed for your machine.
+
+> `docker-compose.yml` overrides `DATABASE_URL` for the API container so it points to the `postgres` service.
+
+## Local setup (without Docker)
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-Check the health endpoint:
+Health check:
 
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
 
-Expected response:
+## Docker Compose startup (recommended)
 
-```json
-{"status":"ok"}
-```
-
-Interactive API docs are available at:
-
-```text
-http://localhost:8000/docs
-```
-
-## Docker Compose (Step-by-step)
-
-1. Build and start PostgreSQL + API:
+Build images:
 
 ```bash
-docker compose up --build -d
+docker compose build
 ```
 
-2. Confirm containers are running:
+Run tests in the API container:
 
 ```bash
-docker compose ps
+docker compose run --rm api pytest
 ```
 
-3. Smoke test the API:
+Start PostgreSQL + API:
+
+```bash
+docker compose up --build
+```
+
+The API container startup command runs migrations first (`alembic upgrade head`) and only starts Uvicorn if migrations succeed.
+
+Health check after startup:
 
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
 
-Expected response:
-
-```json
-{"status":"ok"}
-```
-
-4. Stop containers when done:
+Stop services:
 
 ```bash
 docker compose down
 ```
 
-## Tests
+## Migration commands
 
-Run tests/lint from your local Python environment:
-
-```bash
-pytest
-ruff check .
-```
-
-### Run the same checks with Docker + uv (Python 3.12)
-
-If you prefer not to install Python/uv locally, use the official `uv` Docker image:
-
-1. Sync dependencies (including dev extras):
+Create a new migration:
 
 ```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv sync --extra dev
-```
-
-2. Run tests:
-
-```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv run --python 3.12 pytest
-```
-
-3. Run lint:
-
-```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv run --python 3.12 ruff check .
-```
-
-
-## Step-by-step: Test Ruff with Docker
-
-Use this flow when you want lint results without relying on your local Python install.
-
-1. From the repo root, pull (or let Docker pull) the uv image:
-
-```bash
-docker pull ghcr.io/astral-sh/uv:python3.12-bookworm
-```
-
-2. Install project dependencies (including dev tools like Ruff) inside the container:
-
-```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv sync --extra dev
-```
-
-3. Run Ruff checks:
-
-```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv run --python 3.12 ruff check .
-```
-
-4. (Optional) Auto-fix what Ruff can fix safely, then re-run checks:
-
-```bash
-docker run --rm \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  ghcr.io/astral-sh/uv:python3.12-bookworm \
-  uv run --python 3.12 ruff check . --fix
-```
-
-5. If the previous command changed files, verify clean lint output by running Step 3 again.
-
-A successful run ends with output similar to:
-
-```text
-All checks passed!
-```
-
-## Alembic
-
-Alembic is configured for SQLAlchemy and PostgreSQL. The scaffold is ready for the next step: database models and initial migrations.
-
-After models are added, create a migration:
-
-```bash
-alembic revision --autogenerate -m "create initial tables"
+alembic revision --autogenerate -m "describe_change"
 ```
 
 Apply migrations:
 
 ```bash
 alembic upgrade head
+```
+
+Rollback one migration:
+
+```bash
+alembic downgrade -1
+```
+
+Current migration for MVP schema:
+
+```bash
+alembic upgrade 20260425_0001
+```
+
+## Test setup
+
+### Local
+
+```bash
+pytest
+ruff check .
+```
+
+### Docker
+
+```bash
+docker compose run --rm api pytest
+```
+
+## Example curl flow (register → login → update profile → create measurement → recommendation)
+
+Register:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "demo@example.com",
+    "password": "StrongPass123!"
+  }'
+```
+
+Login and capture token:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "email": "demo@example.com",
+    "password": "StrongPass123!"
+  }' | python -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+```
+
+Create a measurement:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/measurements \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "weight_kg": 82.5,
+    "body_fat_percent": 18.0,
+    "waist_cm": 89.0,
+    "notes": "weekly check-in"
+  }'
+```
+
+Update profile (required before recommendations):
+
+```bash
+curl -X PATCH http://localhost:8000/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "sex": "male",
+    "training_experience": "intermediate",
+    "goal": "muscle_gain"
+  }'
+```
+
+Get recommendation:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/recommendations \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{}'
 ```
