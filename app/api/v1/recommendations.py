@@ -38,7 +38,14 @@ CurrentUser = Annotated[UserModel, Depends(get_current_user)]
             )
         },
         401: {"description": "Authentication failure or missing bearer token."},
-        422: {"description": "Validation error in request payload."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
     },
 )
 def create_recommendation(

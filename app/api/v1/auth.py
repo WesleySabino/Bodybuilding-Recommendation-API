@@ -24,7 +24,14 @@ DbSession = Annotated[Session, Depends(get_db)]
     ),
     responses={
         409: {"description": "Duplicate email (already registered)."},
-        422: {"description": "Validation error in request payload."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
     },
 )
 def register_user(payload: UserCreate, db: DbSession) -> UserRead:
@@ -49,7 +56,14 @@ def register_user(payload: UserCreate, db: DbSession) -> UserRead:
     description="Validates user credentials and returns a bearer JWT access token.",
     responses={
         401: {"description": "Authentication failure (invalid email or password)."},
-        422: {"description": "Validation error in request payload."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
     },
 )
 def login(payload: LoginRequest, db: DbSession) -> Token:

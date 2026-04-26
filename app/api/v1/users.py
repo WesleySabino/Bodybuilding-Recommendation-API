@@ -40,7 +40,14 @@ def read_current_user(current_user: CurrentUser) -> UserMeRead:
     ),
     responses={
         401: {"description": "Authentication failure or missing bearer token."},
-        422: {"description": "Validation error in request payload."},
+        422: {
+            "description": "Validation error in request payload.",
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/HTTPValidationError"}
+                }
+            },
+        },
     },
 )
 def update_current_user_profile(
