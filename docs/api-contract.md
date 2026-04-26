@@ -260,6 +260,7 @@ Error response `404`:
 
 ---
 
+
 ## 8) Generate recommendation
 
 ### `POST /api/v1/recommendations`
@@ -267,49 +268,44 @@ Error response `404`:
 Headers:
 - `Authorization: Bearer <access_token>`
 
-Request (MVP allows empty body if server derives from profile + latest measurement):
-```json
-{}
-```
+Behavior notes (MVP):
+- The endpoint computes recommendations on demand and does **not** persist them.
+- If the user profile does not exist, returns `400`.
+- If no measurements exist, returns `400`.
 
 Success response `200`:
 ```json
 {
-  "id": "4f38d36a-733e-4f42-9cdc-bf3f51f6de99",
-  "user_id": "2d87b6dc-61cf-4cab-982f-6f16a5d7a3af",
   "phase": "cut",
-  "calories_guidance": {
-    "target_kcal": 2400,
-    "strategy": "~15% deficit from estimated maintenance"
+  "calorie_guidance": {
+    "direction": "deficit",
+    "suggested_percent_adjustment": -15.0,
+    "suggested_daily_calorie_delta": -350
   },
-  "protein_guidance": {
-    "grams": 170,
-    "basis": "~2.0 g/kg body weight"
-  },
-  "fat_guidance": {
-    "grams": 70,
-    "basis": "~0.8 g/kg body weight"
-  },
-  "carbs_guidance": {
-    "grams": 230,
-    "basis": "remaining calories after protein/fat"
-  },
+  "protein_g_per_kg": 2.2,
+  "fat_g_per_kg": 0.8,
+  "carbs_guidance": "Fill remaining calories with carbs after protein and fat targets.",
   "rationale": [
-    "Current profile goal is fat_loss.",
-    "Recent trend indicates body weight above desired range for phase goals.",
-    "A moderate deficit is selected to preserve training performance."
+    "Fat-loss goal with sufficient body data favors a cut phase.",
+    "Recent weight trend is -1.1% across provided check-ins."
   ],
   "warnings": [
-    "This is educational guidance and not medical advice."
-  ],
-  "generated_at": "2026-04-25T12:15:00Z"
+    "Body-fat percentage is elevated; avoid aggressive bulking phases."
+  ]
 }
 ```
 
-Validation error `422` (e.g., missing profile prerequisites):
+Error response `400` (missing profile):
 ```json
 {
-  "detail": "Profile is incomplete: sex, height_cm, and goal are required"
+  "detail": "User profile is required before requesting recommendations."
+}
+```
+
+Error response `400` (missing measurements):
+```json
+{
+  "detail": "At least one measurement is required before requesting recommendations."
 }
 ```
 
@@ -330,3 +326,5 @@ Allowed `phase` values:
 - No meal planning.
 - No payment/subscription.
 - No frontend.
+
+---
