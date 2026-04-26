@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
-from app.models.user import User, UserProfile
+from app.models.user import User
 from app.schemas.user import UserMeRead, UserProfileUpdate
+from app.services.users import get_or_upsert_profile
 
 router = APIRouter()
 DbSession = Annotated[Session, Depends(get_db)]
@@ -27,10 +28,7 @@ def update_current_user_profile(
     db: DbSession,
     current_user: CurrentUser,
 ) -> UserMeRead:
-    profile = current_user.profile
-    if profile is None:
-        profile = UserProfile(user_id=current_user.id)
-        db.add(profile)
+    profile = get_or_upsert_profile(db, current_user.id)
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(profile, field, value)
