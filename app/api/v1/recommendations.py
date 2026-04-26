@@ -26,6 +26,20 @@ CurrentUser = Annotated[UserModel, Depends(get_current_user)]
     "",
     response_model=RecommendationRead,
     summary="Generate recommendation for current user",
+    description=(
+        "Computes a deterministic bodybuilding phase recommendation from the "
+        "current profile and the user's recent measurements."
+    ),
+    responses={
+        400: {
+            "description": (
+                "Missing required domain state such as profile data or at least "
+                "one measurement."
+            )
+        },
+        401: {"description": "Authentication failure or missing bearer token."},
+        422: {"description": "Validation error in request payload."},
+    },
 )
 def create_recommendation(
     db: DbSession,

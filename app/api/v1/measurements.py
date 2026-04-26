@@ -26,6 +26,14 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
     response_model=MeasurementRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create a measurement for the current user",
+    description=(
+        "Creates a new body measurement entry for the authenticated user at the "
+        "provided timestamp (or current time when omitted)."
+    ),
+    responses={
+        401: {"description": "Authentication failure or missing bearer token."},
+        422: {"description": "Validation error in request payload."},
+    },
 )
 def create_measurement(
     payload: MeasurementCreate,
@@ -39,6 +47,14 @@ def create_measurement(
     "",
     response_model=list[MeasurementRead],
     summary="List current user's measurements",
+    description=(
+        "Returns a paginated slice of measurements for the authenticated user, "
+        "sorted by measured_at descending."
+    ),
+    responses={
+        401: {"description": "Authentication failure or missing bearer token."},
+        422: {"description": "Validation error in query parameters."},
+    },
 )
 def list_measurements(
     db: DbSession,
@@ -53,6 +69,14 @@ def list_measurements(
     "/latest",
     response_model=MeasurementRead,
     summary="Get the latest measurement for the current user",
+    description=(
+        "Returns the newest measurement entry for the authenticated user. "
+        "Responds with 404 when no measurements exist."
+    ),
+    responses={
+        401: {"description": "Authentication failure or missing bearer token."},
+        404: {"description": "No measurements found for the current user."},
+    },
 )
 def get_latest_measurement(
     db: DbSession,

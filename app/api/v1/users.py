@@ -13,7 +13,15 @@ DbSession = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-@router.get("/me", response_model=UserMeRead, summary="Get current user")
+@router.get(
+    "/me",
+    response_model=UserMeRead,
+    summary="Get current user",
+    description="Returns the authenticated user record and current profile values.",
+    responses={
+        401: {"description": "Authentication failure or missing bearer token."},
+    },
+)
 def read_current_user(current_user: CurrentUser) -> UserMeRead:
     return UserMeRead(
         id=current_user.id,
@@ -22,7 +30,19 @@ def read_current_user(current_user: CurrentUser) -> UserMeRead:
     )
 
 
-@router.patch("/me", response_model=UserMeRead, summary="Update current user profile")
+@router.patch(
+    "/me",
+    response_model=UserMeRead,
+    summary="Update current user profile",
+    description=(
+        "Updates one or more profile fields for the authenticated user. Missing "
+        "fields are left unchanged."
+    ),
+    responses={
+        401: {"description": "Authentication failure or missing bearer token."},
+        422: {"description": "Validation error in request payload."},
+    },
+)
 def update_current_user_profile(
     payload: UserProfileUpdate,
     db: DbSession,

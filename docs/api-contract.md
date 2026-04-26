@@ -67,7 +67,20 @@ Success response `200`:
 Error response `401`:
 ```json
 {
-  "detail": "Invalid credentials"
+  "detail": "Invalid email or password"
+}
+```
+
+Validation error `422`:
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "email"],
+      "msg": "value is not a valid email address",
+      "type": "value_error"
+    }
+  ]
 }
 ```
 
@@ -306,6 +319,13 @@ Error response `400` (missing measurements):
 ```json
 {
   "detail": "At least one measurement is required before requesting recommendations."
+}
+```
+
+Error response `401`:
+```json
+{
+  "detail": "Could not validate credentials"
 }
 ```
 
