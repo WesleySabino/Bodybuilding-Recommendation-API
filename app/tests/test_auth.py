@@ -35,6 +35,7 @@ def test_login_succeeds(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["token_type"] == "bearer"
+    assert body["expires_in"] == 3600
     assert isinstance(body["access_token"], str)
     assert body["access_token"]
 

@@ -124,8 +124,8 @@ def test_multi_user_isolation_for_measurements_and_recommendations(
 
     assert list_a.status_code == 200
     assert list_b.status_code == 200
-    assert [m["weight_kg"] for m in list_a.json()] == [90.0]
-    assert [m["weight_kg"] for m in list_b.json()] == [70.0]
+    assert [m["weight_kg"] for m in list_a.json()["items"]] == [90.0]
+    assert [m["weight_kg"] for m in list_b.json()["items"]] == [70.0]
 
     reco_a = client.post("/api/v1/recommendations", headers=headers_a)
     reco_b = client.post("/api/v1/recommendations", headers=headers_b)

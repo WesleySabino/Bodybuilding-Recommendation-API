@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.models.measurement import Measurement
@@ -31,7 +31,7 @@ def list_measurements(
     user_id: int,
     limit: int,
     offset: int,
-) -> list[Measurement]:
+) -> tuple[list[Measurement], int]:
     statement = (
         select(Measurement)
         .where(Measurement.user_id == user_id)
@@ -39,7 +39,10 @@ def list_measurements(
         .limit(limit)
         .offset(offset)
     )
-    return list(db.scalars(statement))
+    total_statement = select(func.count()).select_from(Measurement).where(
+        Measurement.user_id == user_id
+    )
+    return list(db.scalars(statement)), db.scalar(total_statement) or 0
 
 
 def get_latest_measurement(db: Session, user_id: int) -> Measurement | None:

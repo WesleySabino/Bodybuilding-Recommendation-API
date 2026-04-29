@@ -98,7 +98,11 @@ def test_listing_measurements_is_scoped_to_current_user(client: TestClient) -> N
     )
 
     assert response.status_code == 200
-    measurements = response.json()
+    body = response.json()
+    assert body["total"] == 2
+    assert body["limit"] == 10
+    assert body["offset"] == 0
+    measurements = body["items"]
     assert len(measurements) == 2
     assert [entry["weight_kg"] for entry in measurements] == [81.0, 80.0]
 

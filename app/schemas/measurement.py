@@ -23,3 +23,10 @@ class MeasurementRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MeasurementListRead(BaseModel):
+    items: list[MeasurementRead]
+    total: int
+    limit: int
+    offset: int
