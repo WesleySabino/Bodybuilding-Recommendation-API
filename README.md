@@ -88,6 +88,36 @@ Stop services:
 docker compose down
 ```
 
+
+## Deploy on Render
+
+For a beginner-friendly production path, use Render with Docker.
+
+- Full guide: [`docs/deploy-render.md`](docs/deploy-render.md)
+- Blueprint file: [`render.yaml`](render.yaml)
+
+Required production env vars:
+
+- `DATABASE_URL`
+- `JWT_SECRET_KEY` (must be strong/random in production)
+- `ENVIRONMENT=production`
+
+You can also configure optional vars already supported by the app (for example `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, and `PASSWORD_HASH_ALGORITHM`).
+
+## Deployment smoke test
+
+After deployment, run:
+
+```bash
+./scripts/smoke_deploy.sh https://<your-service>.onrender.com
+```
+
+With an auth token (optional second arg):
+
+```bash
+./scripts/smoke_deploy.sh https://<your-service>.onrender.com "$TOKEN"
+```
+
 ## Migration commands
 
 Create a new migration:

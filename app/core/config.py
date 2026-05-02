@@ -1,4 +1,5 @@
 from functools import lru_cache
+import logging
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,9 +29,21 @@ class Settings(BaseSettings):
     )
 
 
+
+def _warn_if_insecure_production_settings(settings: "Settings") -> None:
+    is_production = settings.environment.lower() == "production"
+    weak_secret_values = {"", "change-me", "dev-only-change-me", "secret", "password"}
+
+    if is_production and settings.jwt_secret_key.lower() in weak_secret_values:
+        logging.getLogger(__name__).warning(
+            "JWT_SECRET_KEY appears insecure for production. Set a long random value."
+        )
+
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    loaded_settings = Settings()
+    _warn_if_insecure_production_settings(loaded_settings)
+    return loaded_settings
 
 
 settings = get_settings()
